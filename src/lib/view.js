@@ -64,7 +64,6 @@ layui.define(['laytpl', 'layer'], function(exports){
         ? '<br><cite>URL：</cite>' + options.url
       : '';
     };
-    
     options.data = options.data || {};
     options.headers = options.headers || {};
     
@@ -77,7 +76,6 @@ layui.define(['laytpl', 'layer'], function(exports){
       options.data[request.tokenName] = request.tokenName in sendData
         ?  options.data[request.tokenName]
       : (layui.data(setter.tableName)[request.tokenName] || '');
-      
       //自动给 Request Headers 传入 token
       options.headers[request.tokenName] = request.tokenName in options.headers 
         ?  options.headers[request.tokenName]
@@ -92,11 +90,22 @@ layui.define(['laytpl', 'layer'], function(exports){
       ,dataType: 'json'
       ,success: function(res){
         var statusCode = response.statusCode;
-        
+        if(res[response.statusName] == statusCode.retoken) {
+            layui.data(setter.tableName, {
+              key: setter.request.tokenName
+              ,value: res.data.access_token
+            });
+          options.data[request.tokenName] = res.data.access_token;
+          options.headers[request.tokenName] = res.data.access_token;
+          options.success = success;
+          options.error = error;
+            view.req(options);
+            return false;
+        }
         //只有 response 的 code 一切正常才执行 done
         if(res[response.statusName] == statusCode.ok) {
           typeof options.done === 'function' && options.done(res); 
-        } 
+        }
         
         //登录状态失效，清除本地 access_token，并强制跳转到登入页
         else if(res[response.statusName] == statusCode.logout){

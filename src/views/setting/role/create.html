@@ -67,8 +67,9 @@
     });
     /*获取菜单列表*/
     admin.req({
-      url:layui.setter.server_url + "/menu_data",
+      url:layui.setter.server_url + "/menu_data?is_select=1",
       type:"get",
+      data:{},
       done:function(res){
         for (i=0;i<res.data.length;i++) {
           $('#menu_list').append(

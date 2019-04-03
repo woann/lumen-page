@@ -91,7 +91,6 @@
           laytpl(getTpl).render(res.data.user, function(html){
             view.innerHTML = html;
           });
-
           var html = '';
           for (i = 0; i < plots_list.length; i++) {
             html += '<option '+plots_list[i].selected+' value="' + plots_list[i].id + '">' + plots_list[i].name + '</option>';

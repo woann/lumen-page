@@ -1153,16 +1153,20 @@ layui.config({
      * @return {{}}
      */
     Class.prototype.resetDataMap=function(list) {
-        var that = this
-            ,options = that.config;
-        var field_Id=options.idField;
-        var map={};
-        if(list){
-            list.forEach(function (o) {
-                map[o[field_Id]]=o;
-            });
+        if (list.length != undefined) {
+            var that = this
+                ,options = that.config;
+            var field_Id=options.idField;
+            var map={};
+            if(list){
+                list.forEach(function (o) {
+                    map[o[field_Id]]=o;
+                });
+            }
+            return map;
+        } else {
+
         }
-        return map;
     }
     Class.prototype.resetDataresetRoot=true;//是否重新确定根节点
     /**
@@ -1547,6 +1551,20 @@ layui.config({
                 ,dataType: 'json'
                 ,headers:options.headers
                 ,success: function(res){
+                    if (res.code == 401) {
+                        var access_token = res.data.access_token;
+                        //重新赋值access_token
+                        layui.data(layui.setter.tableName, {
+                            key: layui.setter.request.tokenName
+                            ,value: access_token
+                        });
+                        that.reload({
+                            where: {
+                                access_token: access_token,
+                            }
+                        });
+                        return;
+                    }
                     if(!res[response.dataName]){//返回是未定义或null时转成[]
                         res[response.dataName]=[]
                         res[response.statusName]=0;
