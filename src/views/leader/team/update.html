@@ -1,0 +1,144 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请编辑开团信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <div id="team_update_view"></div>
+    </div>
+  </div>
+</div>
+<script type="text/html" id="team_update_form">
+  <form class="layui-form" action="" lay-filter="component-form-group">
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">团长姓名</label>
+      <div class="layui-input-block">
+        <input type="text" value="{{ d.leader_name }}" disabled  class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">商品名称</label>
+      <div class="layui-input-block">
+        <input type="text" value="{{ d.goods_name }}" disabled class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">成团人数</label>
+      <div class="layui-input-block">
+        <input type="number" name="team_num" value="{{ d.team_num }}"  lay-verify="required" autocomplete="off" placeholder="团长自定义成团人数" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">最少成团人数</label>
+      <div class="layui-input-block">
+        <input type="number" name="limit_num" value="{{ d.limit_num }}"  lay-verify="required" autocomplete="off" placeholder="最少成团人数" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">开始时间</label>
+      <div class="layui-input-block">
+        <input type="text" name="team_begin" value="{{ d.team_begin }}" id="team_begin" placeholder="" autocomplete="off" class="layui-input ">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">结束时间时间</label>
+      <div class="layui-input-block">
+        <input type="text" name="team_end" value="{{ d.team_end }}" id="team_end"  placeholder="" autocomplete="off" class="layui-input ">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">是否显示</label>
+      <div class="layui-input-block">
+        <input type="checkbox" value="1" name="is_show" lay-skin="switch"  lay-text="是|否" {{#  if(d.is_show == 1){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">是否可用优惠券</label>
+      <div class="layui-input-block">
+        <input type="checkbox" value="1" name="is_coupon" lay-skin="switch"  lay-text="是|否" {{#  if(d.is_coupon == 1){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">是否开启团长优惠</label>
+      <div class="layui-input-block">
+        <input type="checkbox" value="1" name="is_favourable" lay-skin="switch"  lay-text="是|否" {{#  if(d.is_favourable == 1){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <div class="layui-input-block">
+        <div class="layui-footer">
+          <button class="layui-btn" lay-submit="" lay-filter="component-form-group">立即提交</button>
+          <!--<button type="reset" class="layui-btn layui-btn-primary">重置</button>-->
+        </div>
+      </div>
+    </div>
+  </form>
+</script>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params) {
+    var team_id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    layui.use(['admin', 'form', 'laydate'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , table = layui.table
+              , layer = layui.layer
+              , laydate = layui.laydate
+              , laytpl = layui.laytpl
+              , form = layui.form;
+
+      form.render();
+
+      laydate.render({
+        elem: '#LAY-component-form-group-date'
+      });
+
+      laydate.render({elem: '#team_begin',format: 'yyyy-MM-dd HH:mm:ss',type: 'datetime'});
+      laydate.render({elem: '#team_end',format: 'yyyy-MM-dd HH:mm:ss',type: 'datetime'});
+      admin.req({
+        url: layui.setter.server_url + "/team/update",
+        type: "get",
+        data: {id:team_id},
+        async : false,
+        done: function (res) {
+          var getTpl = team_update_form.innerHTML,view = document.getElementById('team_update_view');
+          laytpl(getTpl).render(res.data, function(html){
+            view.innerHTML = html;
+          });
+          form.render();
+        }
+      });
+      /* 监听提交 */
+      form.on('submit(component-form-group)', function (data) {
+        data.field.is_show = data.field.is_show ? 1 : 0;
+        data.field.is_favourable = data.field.is_favourable ? 1 : 0;
+        data.field.is_coupon = data.field.is_coupon ? 1 : 0;
+        data.field.id = team_id;
+        admin.req({
+          url: layui.setter.server_url + "/team/update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            }, function () {
+              table.reload('team_list', {});
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

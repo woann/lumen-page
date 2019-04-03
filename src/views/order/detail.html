@@ -1,0 +1,179 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">订单详情</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <div id="order_detail_view"></div>
+    </div>
+  </div>
+</div>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script type="text/html" id="order_detail_form">
+  <table class="layui-table" lay-even="" lay-skin="nob">
+    <colgroup>
+      <col width="150">
+      <col width="150">
+      <col width="200">
+      <col>
+    </colgroup>
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>{{ d.order.order_id }}</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td>订单编号</td>
+      <td>{{ d.order.order_sn }}</td>
+    </tr>
+    <tr>
+      <td>用户名</td>
+      <td>{{ d.order.user_name }}</td>
+    </tr>
+    <tr>
+      <td>收货人</td>
+      <td>{{ d.order.consignee }}</td>
+    </tr>
+    <tr>
+      <td>收货电话</td>
+      <td>{{ d.order.tel }}</td>
+    </tr>
+    <tr>
+      <td>收货地址</td>
+      <td>{{ d.order.address }}</td>
+    </tr>
+    <tr>
+      <td>最佳送货时间</td>
+      <td>{{ d.order.best_time }}</td>
+    </tr>
+    <tr>
+      <td>订单附言</td>
+      <td>{{ d.order.postscript }}</td>
+    </tr>
+    <tr>
+      <td>商品总金额</td>
+      <td>&yen; {{ d.order.goods_amount }}</td>
+    </tr>
+    <tr>
+      <td>配送费用</td>
+      <td>&yen; {{ d.order.shipping_fee }}</td>
+    </tr>
+    <tr>
+      <td>应付金额</td>
+      <td>&yen; {{ d.order.order_amount }}</td>
+    </tr>
+    <tr>
+      <td>实际支付</td>
+      <td>&yen; {{ d.order.money_paid }}</td>
+    </tr>
+    <tr>
+      <td>下单时间</td>
+      <td>{{ d.order.add_time }}</td>
+    </tr>
+    <tr>
+      <td>支付时间</td>
+      <td>{{ d.order.pay_time }}</td>
+    </tr>
+    <tr>
+      <td>配送时间</td>
+      <td>{{ d.order.shipping_time }}</td>
+    </tr>
+    <tr>
+      <td>确认时间</td>
+      <td>{{ d.order.confirm_take_time }}</td>
+    </tr>
+    <tr>
+      <td>订单状态</td>
+      <td>
+        {{#  if(d.order.order_status == 0){ }}
+        <span class="layui-btn layui-btn-xs layui-btn-normal">未核销</span>
+        {{#  } else if(d.order.order_status == 1) { }}
+        <span class="layui-btn layui-btn-xs">已核销</span>
+        {{#  } else if(d.order.order_status == 2) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-primary">已取消</span>
+        {{#  } else if(d.order.order_status == 3) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-disabled">无效订单</span>
+        {{#  } else if(d.order.order_status == 4) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-warm">退货</span>
+        {{#  } }}
+      </td>
+    </tr>
+    <tr>
+      <td>支付状态</td>
+      <td>
+        {{#  if(d.order.pay_status == 0){ }}
+        <span class="layui-btn layui-btn-xs layui-btn-normal">未支付</span>
+        {{#  } else if(d.order.pay_status == 1) { }}
+        <span class="layui-btn layui-btn-xs  layui-btn-warm">支付中</span>
+        {{#  } else if(d.order.pay_status == 2) { }}
+        <span class="layui-btn layui-btn-xs">已支付</span>
+        {{#  } }}
+      </td>
+    </tr>
+    <tr>
+      <td>配送状态</td>
+      <td>
+        {{#  if(d.order.shipping_status == 0){ }}
+        <span class="layui-btn layui-btn-xs layui-btn-normal">未发货</span>
+        {{#  } else if(d.order.shipping_status == 1) { }}
+        <span class="layui-btn layui-btn-xs">已发货</span>
+        {{#  } else if(d.order.shipping_status == 2) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-primary">已收货</span>
+        {{#  } else if(d.order.shipping_status == 3) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-disabled">备货中</span>
+        {{#  } }}
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+</script>
+<script>
+  layui.data.sendParams = function(params) {
+    var order_id = params.id;
+    layui.use(['admin', 'form'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , table = layui.table
+              , layer = layui.layer
+              , form = layui.form
+              , laytpl = layui.laytpl;
+
+      form.render(null, 'LAY-order-detail');
+
+      admin.req({
+        url:layui.setter.server_url + "/order/detail",
+        type:"get",
+        data:{id:order_id},
+        done:function(res){
+          var getTpl = order_detail_form.innerHTML
+                  ,view = document.getElementById('order_detail_view');
+          laytpl(getTpl).render(res.data, function(html){
+            view.innerHTML = html;
+          });
+          // form.render('select');
+        }
+      });
+
+      /* 监听提交 */
+      form.on('submit(LAY-order-detail)', function (data) {
+        admin.req({
+          url: layui.setter.server_url + "/order/update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            }, function () {
+              table.reload('leader_list', {});
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

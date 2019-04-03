@@ -1,0 +1,157 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善团长信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <div id="leader_update_view"></div>
+    </div>
+  </div>
+</div>
+<script type="text/html" id="leader_update_form">
+  <form class="layui-form" action="" lay-filter="LAY-leader-create">
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 所在小区</label>
+      <div class="layui-input-block">
+        <div class="layui-inline">
+          <select name="plots_id"  lay-verify="required" lay-search="">
+            <option value="">请选择小区</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 绑定用户</label>
+      <div class="layui-input-inline">
+        <select name="user_id" lay-verify="required" lay-search="">
+          <option value="">选择用户</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 团长姓名</label>
+      <div class="layui-input-block">
+        <input type="text" name="name" value="{{ d.name }}" lay-verify="required" autocomplete="off" placeholder="团长名称" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 电话</label>
+      <div class="layui-input-block">
+        <input type="text" name="tel" value="{{ d.tel }}" lay-verify="required" autocomplete="off" placeholder="电话" class="layui-input">
+      </div>
+    </div>
+
+
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 代收地址</label>
+      <div class="layui-input-block">
+        <input type="text" name="address" value="{{ d.address }}" lay-verify="required" autocomplete="off" placeholder="代收地址" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 微信账号</label>
+      <div class="layui-input-block">
+        <input type="text" name="wx_account" value="{{ d.wx_account }}" lay-verify="required" autocomplete="off" placeholder="微信账号" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 微信群人数</label>
+      <div class="layui-input-block">
+        <input type="text" name="wx_group_count" value="{{ d.wx_group_count }}" lay-verify="required" autocomplete="off" placeholder="群人数" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <div class="layui-input-block">
+        <div class="layui-footer">
+          <button class="layui-btn" lay-submit="" lay-filter="LAY-leader-create">立即提交</button>
+          <!--<button type="reset" class="layui-btn layui-btn-primary">重置</button>-->
+        </div>
+      </div>
+    </div>
+  </form>
+
+</script>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params) {
+    var leader_id = params.id;
+    layui.use(['admin', 'form', 'laydate'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , table = layui.table
+              , layer = layui.layer
+              ,laytpl = layui.laytpl
+              , form = layui.form;
+
+      form.render(null, 'LAY-leader-create');
+      admin.req({
+        url: layui.setter.server_url + "/leader/create",
+        data: {id: leader_id},
+        async:false,
+        type: "get",
+        done: function (res) {
+          var user_list = res.data.user_list;
+          var plots_list = res.data.plots_list;
+          var leader = res.data.leader;
+          var html = '';
+          var user_selected;
+          var plots_selected;
+          for (i = 0; i < user_list.length; i++) {
+            if (user_list[i].user_id == leader.user_id) {
+              user_selected = 'selected';
+            } else {
+              user_selected = '';
+            }
+            html += '<option '+user_selected+' value="' + user_list[i].user_id + '">' + user_list[i].nick_name + '</option>';
+          }
+          var html1 = '';
+          for (i = 0; i < plots_list.length; i++) {
+            if (plots_list[i].id == leader.plots_id) {
+              plots_selected = 'selected';
+            } else {
+              plots_selected = '';
+            }
+            html1 += '<option '+plots_selected+' value="' + plots_list[i].id + '">' + plots_list[i].name + '</option>';
+          }
+          var getTpl = leader_update_form.innerHTML
+                  ,view = document.getElementById('leader_update_view');
+          laytpl(getTpl).render(res.data.leader, function(html){
+            view.innerHTML = html;
+          });
+          $('select[name="user_id"]').append(html);
+          $('select[name="plots_id"]').append(html1);
+          form.render();
+        }
+      });
+
+
+      /* 监听提交 */
+      form.on('submit(LAY-leader-create)', function (data) {
+        data.field.id = leader_id;
+        admin.req({
+          url: layui.setter.server_url + "/leader/update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            }, function () {
+              table.reload('leader_list', {});
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

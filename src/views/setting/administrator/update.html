@@ -1,0 +1,96 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善管理员信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="LAY-administrator-update">
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">账号</label>
+          <div class="layui-input-block">
+            <input type="text" name="username"  lay-verify="required"autocomplete="off" placeholder="登录用户名" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">密码</label>
+          <div class="layui-input-block">
+            <input type="password" name="password"  lay-verify="required" autocomplete="off" placeholder="输入密码" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">选择角色</label>
+          <div class="layui-input-block">
+            <select name="role_id"  id="role_list" lay-verify="required">
+            </select>
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="LAY-administrator-update">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params) {
+    var administrator_id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    if (administrator_id == undefined) {
+      administrator_id = 1;
+    }
+    layui.use(['admin', 'form', 'laydate'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , layer = layui.layer
+              , table = layui.table
+              , form = layui.form;
+
+      form.render(null, 'LAY-administrator-update');
+      /*获取父级菜单选择框数据*/
+      admin.req({
+        url: layui.setter.server_url + "/administrator_update?id="+administrator_id,
+        type: "get",
+        done: function (res) {
+          var role_list = res.data.role_list;
+          var administrator = res.data.administrator;
+          for (i = 0; i < role_list.length; i++) {
+            $('#role_list').append(
+                    '<option '+ role_list[i].selected +' value="' + role_list[i].id + '">' + role_list[i].name + '</option>'
+            );
+          }
+          $('input[name="username"]').val(administrator.username);
+          $('input[name="password"]').val(administrator.clear_pass);
+          form.render('select');
+        }
+      });
+      /* 监听提交 */
+      form.on('submit(LAY-administrator-update)', function (data) {
+        data.field.id = administrator_id;
+        admin.req({
+          url: layui.setter.server_url + "/administrator_update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              ,icon: 1
+              ,time: 1000
+            }, function(){
+              table.reload('administrator_list', {
+              });
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

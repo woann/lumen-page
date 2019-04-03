@@ -1,0 +1,115 @@
+<title>管理员</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>系统设置</cite></a>
+        <a><cite>管理员</cite></a>
+        <a><cite>管理员列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">管理员列表</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="LAY-administrator-list" lay-filter="LAY-administrator-list"></table>
+
+                    <script type="text/html" id="LAY-administrator-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="add">添加管理员</button>
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-administrator-list-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,setter = layui.setter;
+
+        table.render({
+            elem: '#LAY-administrator-list'
+            ,url:setter.server_url + '/administrator_list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-administrator-list-toolbarDemo'
+            ,title: '管理员列表'
+            ,cols: [[
+                {type: 'checkbox', fixed: 'left'}
+                ,{field:'username', title:'用户名'}
+                ,{field:'role_name', title:'角色'}
+                ,{field:'created_at', title:'创建时间'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-administrator-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'administrator_list'
+        });
+
+        //头工具栏事件
+        table.on('toolbar(LAY-administrator-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'add':
+                    layui.use(['admin','view'],function(){
+                        var admin=layui.admin,
+                            view=layui.view;
+                        admin.popup({
+                            "title":"添加管理员"
+                            ,area: ['60%', '80%']
+                            ,id:'LAY-administrator-create'
+                            ,success: function(){
+                                view(this.id).render('setting/administrator/create');
+                            }
+                        });
+                    });
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-administrator-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('数据千万条,勿删错一条,您的手一抖,开发两行泪~', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/administrator_del",
+                        type:"post",
+                        data:{id:obj.data.id},
+                        done:function(res){
+                            obj.del();
+                            layer.close(index);
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑管理员"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-administrator-update'
+                        ,success: function(){
+                            view(this.id).render('setting/administrator/update',{id:obj.data.id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

@@ -1,0 +1,162 @@
+<title>菜单列表</title>
+<style>
+    .layui-table-view .layui-table{
+        width: 100% !important;
+    }
+</style>
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>系统设置</cite></a>
+        <a><cite>菜单管理</cite></a>
+        <a><cite>菜单列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">菜单列表</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="LAY-menu-list" lay-filter="LAY-menu-list"></table>
+                    <script type="text/html" id="LAY-menu-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" id="add" lay-event="add">添加菜单</button>
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-menu-list-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'treeGrid'], function(){
+        var admin = layui.admin
+            ,treeGrid = layui.treeGrid
+            ,setter = layui.setter;
+
+        // table.render({
+        //     elem: '#LAY-menu-list'
+        //     ,url:setter.server_url + '/menu_data'
+        //     ,where: {
+        //         access_token: layui.data('layuiAdmin').access_token
+        //     }
+        //     ,toolbar: '#LAY-menu-list-toolbarDemo'
+        //     ,title: '菜单列表'
+        //     ,cols: [[
+        //         {type: 'checkbox', fixed: 'left'}
+        //         ,{field:'name', title:'名称', edit: 'text'}
+        //         ,{field:'title', title:'标题',  edit: 'text'}
+        //         ,{field:'jump', title:'跳转', edit: 'text', sort: true}
+        //         ,{field:'sort', title:'排序', edit: 'text', sort: true}
+        //         ,{field:'created_at', title:'创建时间'}
+        //         ,{fixed: 'right', title:'操作', toolbar: '#LAY-menu-list-barDemo'}
+        //     ]]
+        //     ,page: false
+        //     ,id:'menu_list'
+        // });
+
+        ptable=treeGrid.render({
+            id:'menu_list'
+            ,idField:'id'
+            ,url:setter.server_url + '/menu_data'
+            ,method:'get'
+            ,treeId:'id'//树形id字段名称
+            ,treeUpId:'pid'//树形父id字段名称
+            ,treeShowName:'title'//以树形式显示的字段
+            ,scroll:0
+            ,elem: '#LAY-menu-list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-menu-list-toolbarDemo'
+            ,title: '菜单列表'
+            ,cols: [[
+                {field:'title', title:'菜单名称',  edit: 'text',width:'20%'}
+                ,{field:'name', title:'关键字', edit: 'text',width:'10%'}
+                ,{field:'jump', title:'跳转', edit: 'text', sort: true,width:'30%'}
+                ,{field:'sort', title:'排序', edit: 'text', sort: true,width:'10%'}
+                ,{field:'created_at', title:'创建时间',width:'20%'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-menu-list-barDemo'}
+            ]]
+            ,page:false
+            ,iconOpen:false
+        });
+
+        $(document).on('click','#add',function(){
+            layui.use(['admin','view'],function(){
+                var admin=layui.admin,
+                    view=layui.view;
+                admin.popup({
+                    "title":"添加菜单"
+                    ,area: ['60%', '80%']
+                    ,id:'LAY-menu-create'
+                    ,success: function(){
+                        view(this.id).render('setting/menu/create');
+                    }
+                });
+            });
+        });
+
+
+        treeGrid.on('edit(LAY-menu-list)', function(obj){
+            var value = obj.value //得到修改后的值
+                ,data = obj.data //得到所在行所有键值
+                ,field = obj.field; //得到字段
+            var param = {id:data.id};
+            param[field] = value;
+            admin.req({
+                url:layui.setter.server_url + "/menu_update",
+                type:"post",
+                data:param,
+                done:function(res){
+                    layer.msg(res.msg, {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    }, function(){});
+                }
+            });
+        });
+
+        //监听行工具事件
+        treeGrid.on('tool(LAY-menu-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('数据千万条,勿删错一条,您的手一抖,开发两行泪~', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/menu_del",
+                        type:"post",
+                        data:{id:obj.data.id},
+                        done:function(res){
+                            obj.del();
+                            layer.close(index);
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑菜单"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-menu-update'
+                        ,success: function(){
+                            view(this.id).render('setting/menu/update',{id:obj.data.id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

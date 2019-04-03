@@ -1,0 +1,186 @@
+<title>评价列表</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>商品管理</cite></a>
+        <a><cite>评价列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">评价列表</div>
+                <div class="layui-card-body">
+                    <div class="demoTable" style="margin-bottom: 5px">
+                        <form class="layui-form" action="" lay-filter="LAY-comment-search">
+                            <div class="layui-inline">
+                                <input class="layui-input" name="keyword" id="LAY-comment-search" autocomplete="off" placeholder="评价内容">
+                            </div>
+                            <button class="layui-btn" lay-submit="" lay-filter="LAY-comment-search">搜索</button>
+                        </form>
+                    </div>
+
+                    <table class="layui-hide" id="LAY-comment-list" lay-filter="LAY-comment-list"></table>
+
+                    <script type="text/html" id="LAY-comment-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="bat_pass">批量通过</button>
+                            <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="bat_refuse">批量拒绝</button>
+                            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="bat_del">批量删除</button>
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-comment-list-barDemo">
+                        {{#  if(d.status == 0){ }}
+                        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="pass">通过</a>
+                        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="refuse">拒绝</a>
+                        {{# } }}
+                        <!--<a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>-->
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="comment_status">
+    {{#  if(d.status == 0){ }}
+    <span class="layui-btn layui-btn-xs layui-btn-normal">待审核</span>
+    {{#  } else if(d.status == 2) { }}
+    <span class="layui-btn layui-btn-xs">审核通过</span>
+    {{#  } else if(d.status == 1) { }}
+    <span class="layui-btn layui-btn-xs layui-btn-disabled">未通过</span>
+    {{#  } }}
+</script>
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,form = layui.form
+            ,setter = layui.setter;
+
+        var tableIns = table.render({
+            elem: '#LAY-comment-list'
+            ,url:setter.server_url + '/comment/list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-comment-list-toolbarDemo'
+            ,title: '评价列表'
+            ,cols: [[
+                {type: 'checkbox',width:'5%'}
+                ,{field:'goods_name', title:'商品名称',width:'15%'}
+                ,{field:'content', title:'评价内容',width:'15%'}
+                ,{field:'user_name', title:'用户名',width:'10%'}
+                ,{field:'ip_address', title:'ip地址',width:'10%'}
+                ,{field:'status', title:'审核状态',width:'10%',templet: '#comment_status',}
+                ,{field:'like_num', title:'点赞数',width:'5%'}
+                ,{field:'dis_browse_num', title:'浏览数',width:'5%'}
+                ,{field:'add_time', title:'评价时间',width:'12%'}
+                ,{title:'操作', toolbar: '#LAY-comment-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'comment_list'
+        });
+        //搜索
+        form.on('submit(LAY-comment-search)', function(data){
+            table.reload('comment_list', {
+                where: {
+                    keyword: data.field.keyword,
+                }
+            });
+            return false;
+        });
+        //通过
+        function auditComment(ids,status) {
+            var msg;
+            if (status == 1) {
+                msg = '是否拒绝所选评价审核?';
+            } else {
+                msg = '是否通过所选评价审核?';
+            }
+            layer.confirm(msg, function(index){
+                admin.req({
+                    url:layui.setter.server_url + "/comment/audit",
+                    type:"post",
+                    data:{id:ids,status:status},
+                    done:function(res){
+                        layer.close(index);
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            tableIns.reload({});
+                        });
+                    }
+                });
+            });
+        }
+
+        function delComment(ids) {
+            layer.confirm('是否删除所选评价?', function(index){
+                admin.req({
+                    url:layui.setter.server_url + "/comment/del",
+                    type:"post",
+                    data:{id:ids},
+                    done:function(res){
+                        layer.close(index);
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            tableIns.reload({});
+                        });
+                    }
+                });
+            });
+        }
+
+        //头工具栏事件
+        table.on('toolbar(LAY-comment-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            var data = checkStatus.data;
+            if (data.length == 0) {
+                layer.msg('请先选中要操作的数据');
+                return false;
+            }
+            var ids = '';
+            for (i = 0; i < data.length; i++) {
+                if (i == 0) {
+                    ids = data[i].comment_id;
+                } else {
+                    ids += ',' + data[i].comment_id
+                }
+            }
+            switch(obj.event){
+                case 'bat_pass':
+                    auditComment(ids, 2);
+                    break;
+                case 'bat_refuse':
+                    auditComment(ids, 1);
+                    break;
+                case 'bat_del':
+                    delComment(ids);
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-comment-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+               delComment(obj.data.comment_id)
+            } else if(obj.event === 'pass'){
+                auditComment(obj.data.comment_id, 2)
+            }
+            else if(obj.event === 'refuse'){
+                auditComment(obj.data.comment_id, 1)
+            }
+        });
+
+    });
+</script>

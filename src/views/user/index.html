@@ -1,0 +1,155 @@
+<title>用户列表</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>用户管理</cite></a>
+        <a><cite>用户列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">用户列表</div>
+                <div class="layui-card-body">
+                    <div class="demoTable" style="margin-bottom: 5px">
+                        搜索用户：
+                        <form class="layui-form" action="" lay-filter="LAY-user-search">
+                            <div class="layui-inline">
+                                <input class="layui-input" name="keyword" id="LAY-user-search" autocomplete="off" placeholder="用户名/昵称">
+                            </div>
+                            <button class="layui-btn" lay-submit="" lay-filter="LAY-user-search">搜索</button>
+                        </form>
+                    </div>
+
+                    <table class="layui-hide" id="LAY-user-list" lay-filter="LAY-user-list"></table>
+
+                    <script type="text/html" id="LAY-user-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="add">添加小区</button>-->
+                            <!--<button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="bat_audit">批量审核</button>-->
+                            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="bat_del">批量删除</button>
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-user-list-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="sex">
+    {{ d.sex == 0 ? '女' : '男' }}
+</script>
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,form = layui.form
+            ,setter = layui.setter;
+        var tableIns = table.render({
+            elem: '#LAY-user-list'
+            ,url:setter.server_url + '/user/list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-user-list-toolbarDemo'
+            ,title: '用户列表'
+            ,cols: [[
+                {type: 'checkbox', fixed: 'left',width:'5%'}
+                ,{field:'user_name', title:'姓名',width:'10%'}
+                ,{field:'nick_name', title:'昵称',width:'10%'}
+                ,{field:'sex', title:'性别',width:'5%',templet: "#sex"}
+                // ,{field:'area', title:'地区',width:'15%'}
+                ,{field:'plots_name', title:'所在小区',width:'15%'}
+                ,{field:'last_ip', title:'最后登录ip',width:'10%'}
+                ,{field:'last_login', title:'最后登录时间',width:'15%'}
+                ,{field:'reg_time', title:'注册时间',width:'15%'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-user-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'user_list'
+        });
+        //搜索
+        form.on('submit(LAY-user-search)', function(data){
+            console.log(data);
+            table.reload('user_list', {
+                where: {
+                    keyword: data.field.keyword,
+                }
+            });
+            return false;
+        });
+        //删除
+        function delUser(ids) {
+            layer.confirm('是否删除所选用户?', function(index){
+                admin.req({
+                    url:layui.setter.server_url + "/user/del",
+                    type:"post",
+                    data:{id:ids},
+                    done:function(res){
+                        layer.close(index);
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            tableIns.reload({});
+                        });
+                    }
+                });
+            });
+        }
+
+        //头工具栏事件
+        table.on('toolbar(LAY-user-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'bat_del':
+                    var data = checkStatus.data;
+                    if (data.length == 0) {
+                        layer.msg('请选择要删除的用户');
+                        return false;
+                    }
+                    var ids = '';
+                    for (i = 0; i < data.length; i++) {
+                        if (i == 0) {
+                            ids = data[i].user_id;
+                        } else {
+                            ids += ',' + data[i].user_id
+                        }
+                    }
+                    delUser(ids);
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-user-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+               delUser(obj.data.user_id)
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑用户"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-user-update'
+                        ,success: function(){
+                            view(this.id).render('user/update',{id:obj.data.user_id});
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'pass'){
+                audituser(obj.data.id)
+            }
+        });
+    });
+</script>

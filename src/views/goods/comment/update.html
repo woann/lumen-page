@@ -1,0 +1,267 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善小区信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <div id="plots_update_view"></div>
+    </div>
+  </div>
+</div>
+<script type="text/html" id="plots_update_form">
+  <form class="layui-form" action="" lay-filter="LAY-plots-update">
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 小区名称</label>
+      <div class="layui-input-block">
+        <input type="text" name="name"  lay-verify="required" autocomplete="off" placeholder="小区名称" value="{{ d.name }}" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 选择地址</label>
+      <div class="layui-input-block">
+        <div class="layui-inline">
+          <select name="province" lay-filter="province" lay-verify="required">
+          </select>
+        </div>
+        <div class="layui-inline">
+          <select name="city" lay-filter="city" lay-verify="required">
+            <option value="">请选择</option>
+          </select>
+        </div>
+        <div class="layui-inline">
+          <select name="district" lay-filter="district" lay-verify="required">
+            <option value="">请选择</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 详细地址</label>
+      <div class="layui-input-block">
+        <input type="text" name="address" value="{{ d.address }}" lay-verify="required" autocomplete="off" placeholder="详细地址" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 经度</label>
+      <div class="layui-input-block">
+        <input type="text" name="lng" value="{{ d.lng }}" lay-verify="required" autocomplete="off" placeholder="经度" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 纬度</label>
+      <div class="layui-input-block">
+        <input type="text" name="lat" value="{{ d.lat }}" lay-verify="required" autocomplete="off" placeholder="纬度" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 小区团长数量</label>
+      <div class="layui-input-block">
+        <input type="number" name="plots_leader" value="{{ d.plots_leader }}"  lay-verify="required"autocomplete="off" placeholder="小区团长数量" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">上门运费</label>
+      <div class="layui-input-block">
+        <input type="number" name="delivery_money" value="{{ d.delivery_money }}" autocomplete="off" placeholder="上门运费" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">是否送货上门</label>
+      <div class="layui-input-block">
+        <input type="radio" name="delivery_to_home" value="1" title="是"  {{#  if(d.delivery_to_home == 1){ }} checked {{# } }}>
+        <input type="radio" name="delivery_to_home" value="0" title="否"  {{#  if(d.delivery_to_home == 0){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">团长代理点自提</label>
+      <div class="layui-input-block">
+        <input type="radio" name="take_self" value="1" title="是"  {{#  if(d.take_self == 1){ }} checked {{# } }}>
+        <input type="radio" name="take_self" value="0" title="否"  {{#  if(d.take_self == 0){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">是否显示</label>
+      <div class="layui-input-block">
+        <input type="radio" name="is_show" value="1" title="是" {{#  if(d.is_show == 1){ }} checked {{# } }}>
+        <input type="radio" name="is_show" value="0" title="否" {{#  if(d.is_show == 0){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label"><span style="color: red;">*</span> 小区图片</label>
+      <div class="layui-input-block">
+        <div class="layui-upload">
+          <button type="button" class="layui-btn" id="upload_plots_image">上传图片</button>
+          <input type="hidden" name="plots_image" value="{{ d.plots_image }}">
+          <div class="layui-upload-list">
+            <img width="100" class="layui-upload-img" id="show_plots_image" src="{{ layui.setter.resources_url + d.plots_image }}">
+            <p id="image_text">{{ d.plots_image }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <div class="layui-input-block">
+        <div class="layui-footer">
+          <button class="layui-btn" lay-submit="" lay-filter="LAY-plots-update">立即提交</button>
+          <!--<button type="reset" class="layui-btn layui-btn-primary">重置</button>-->
+        </div>
+      </div>
+    </div>
+  </form>
+</script>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params){
+    var plots_id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    layui.use(['admin', 'form', 'laydate','laytpl','upload'], function(){
+      var $ = layui.$
+              ,admin = layui.admin
+              ,layer = layui.layer
+              ,laydate = layui.laydate
+              ,form = layui.form
+              ,upload = layui.upload
+              ,table = layui.table
+              ,laytpl = layui.laytpl;
+
+      form.render(null, 'LAY-plots-update');
+
+      laydate.render({
+        elem: '#LAY-LAY-plots-update-date'
+      });
+
+      //获取原始数据
+      admin.req({
+        url:layui.setter.server_url + "/plots/update",
+        type:"get",
+        data:{id:plots_id},
+        done:function(res){
+          var getTpl = plots_update_form.innerHTML
+              ,view = document.getElementById('plots_update_view');
+          laytpl(getTpl).render(res.data.plots, function(html){
+            view.innerHTML = html;
+          });
+          setAddress(res.data.province, $('select[name="province"]'));
+          setAddress(res.data.city, $('select[name="city"]'));
+          setAddress(res.data.district, $('select[name="district"]'));
+          //上传
+          var uploadInst = upload.render({
+            elem: '#upload_plots_image'
+            ,url: layui.setter.server_url + '/upload'
+            ,data:{path:'pinpin-plots/goods',access_token:layui.data('layuiAdmin').access_token}
+            ,before: function(obj){
+              obj.preview(function(index, file, result){
+                $('#show_plots_image').attr('src', result); //图片链接（base64）
+              });
+            }
+            ,done: function(res){
+              //如果上传失败
+              if(res.code != 0){
+                layer.msg(res.msg, {
+                  offset: '15px'
+                  ,icon: 5
+                  ,time: 1000
+                }, function(){});
+                return false;
+              }
+              //上传成功
+              $('input[name="plots_image"]').val(res.data.filename);
+              layer.msg('上传成功', {
+                offset: '15px'
+                ,icon: 1
+                ,time: 1000
+              }, function(){});
+
+            }
+            ,error: function(){
+              //演示失败状态，并实现重传
+              var image_text = $('#image_text');
+              image_text.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+              image_text.find('.demo-reload').on('click', function(){
+                uploadInst.upload();
+              });
+            }
+          });
+
+          form.render();
+        }
+      });
+
+      //渲染选择框
+      function setAddress(list,selector)
+      {
+          var html = '<option value="">请选择</option>';
+          for (i=0;i<list.length;i++) {
+            html += '<option '+list[i].selected+' value="'+list[i].id+'|'+list[i].name+'">'+list[i].name+'</option>';
+          }
+        selector.append(html);
+      }
+
+      //地址联动
+      function getAddress(node,pid = 0)
+      {
+        admin.req({
+          url:layui.setter.server_url + "/get_address",
+          type:"get",
+          data:{pid:pid},
+          done:function(res){
+            var html = '<option value="">请选择</option>';
+            for (i=0;i<res.data.length;i++) {
+              html += '<option value="'+res.data[i].id+'|'+res.data[i].name+'">'+res.data[i].name+'</option>';
+            }
+            node.append(html);
+            form.render('select');
+          }
+        });
+      }
+
+      //监听省级选择框
+      form.on('select(province)', function(data){
+        var pid = data.value;
+        $('select[name="city"]').empty();
+        $('select[name="district"]').empty();
+        getAddress($('select[name="city"]'),pid);
+      });
+      //监听市级选择框
+      form.on('select(city)', function(data){
+        var pid = data.value;
+        $('select[name="district"]').empty();
+        getAddress($('select[name="district"]'),pid);
+      });
+
+      /* 监听提交 */
+      form.on('submit(LAY-plots-update)', function(data){
+        data.field.delivery_to_home = data.field.delivery_to_home ? 1 : 0;
+        data.field.take_self = data.field.take_self ? 1 : 0;
+        data.field.is_show = data.field.is_show ? 1 : 0;
+        data.field.id = plots_id;
+        admin.req({
+          url:layui.setter.server_url + "/plots/update",
+          type:"post",
+          data:data.field,
+          done:function(res){
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              ,icon: 1
+              ,time: 1000
+            }, function(){
+              table.reload('plots_list', {
+              });
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

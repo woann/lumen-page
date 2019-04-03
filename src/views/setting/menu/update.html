@@ -1,0 +1,135 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善菜单信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="LAY-menu-update">
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">父级菜单</label>
+          <div class="layui-input-block">
+            <select name="pid"  id="p_menu" lay-verify="required">
+              <option value="0">一级菜单</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">菜单标题</label>
+          <div class="layui-input-block">
+            <input type="text" name="title"  lay-verify="required"autocomplete="off" placeholder="中文标题" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">菜单英文名称</label>
+          <div class="layui-input-block">
+            <input type="text" name="name"  lay-verify="required" autocomplete="off" placeholder="与视图的文件夹名称和路由路径对应" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">图标</label>
+          <div class="layui-input-block">
+            <input type="text" name="icon"  autocomplete="off" placeholder="图标对应class" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">跳转路由</label>
+          <div class="layui-input-block">
+            <input type="text" name="jump"  autocomplete="off" placeholder="填不填写该值则走默认路由" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">排序</label>
+          <div class="layui-input-block">
+            <input type="text" name="sort" max="127"   autocomplete="off" placeholder="数值越大,排名越靠前" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="LAY-menu-update">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)">
+</script>
+<script>
+  //定义一个 lay-done 对应的全局方法，以供动态模板执行
+  layui.data.sendParams = function(params){
+    var id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    layui.use(['admin', 'form', 'laydate','treeGrid'], function(){
+      var $ = layui.$
+              ,admin = layui.admin
+              , table = layui.table
+              ,layer = layui.layer
+              ,treeGrid = layui.treeGrid
+              ,laydate = layui.laydate
+              ,form = layui.form;
+
+      form.render(null, 'LAY-menu-update');
+      laydate.render({
+        elem: '#LAY-LAY-menu-update-date'
+      });
+      /**获取原数据**/
+      admin.req({
+        url:layui.setter.server_url + "/menu_update",
+        data:{id:id},
+        type:"get",
+        done:function(menu){
+          $('input[name="title"]').val(menu.data.title);
+          $('input[name="name"]').val(menu.data.name);
+          $('input[name="icon"]').val(menu.data.icon);
+          $('input[name="jump"]').val(menu.data.jump);
+          $('input[name="sort"]').val(menu.data.sort);
+          /*获取父级菜单选择框数据*/
+          admin.req({
+            url:layui.setter.server_url + "/menu_data?is_select=1",
+            type:"get",
+            done:function(res){
+              var html = '';
+              for (i=0;i<res.data.length;i++) {
+                if (res.data[i].id == menu.data.pid){
+                  selected = 'selected';
+                } else {
+                  selected = '';
+                }
+                html += '<option '+ selected +' value="'+res.data[i].id+'">'+res.data[i].title+'</option>';
+              }
+              $('#p_menu').append(html);
+              form.render('select');
+            }
+          });
+        }
+      });
+
+      /* 监听提交 */
+      form.on('submit(LAY-menu-update)', function(data){
+        data.field.id = id;
+        admin.req({
+          url:layui.setter.server_url + "/menu_update",
+          type:"post",
+          data:data.field,
+          done:function(res){
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              ,icon: 1
+              ,time: 1000
+            }, function(){
+              treeGrid.reload('menu_list', {
+              });
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+
+  };
+</script>

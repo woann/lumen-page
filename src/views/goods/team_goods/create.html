@@ -1,0 +1,182 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善拼团商品信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="LAY-team-goods-create">
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 选择商品</label>
+          <div class="layui-input-block">
+            <div class="layui-inline">
+              <select name="goods_id" lay-verify="required">
+                <option value="">请选择</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 拼团价</label>
+          <div class="layui-input-block">
+            <input type="number" name="team_price"  lay-verify="required" autocomplete="off" placeholder="拼团价" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 几人团</label>
+          <div class="layui-input-block">
+            <input type="number" name="team_num"  lay-verify="required" autocomplete="off" placeholder="几人团" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 最小成团人数</label>
+          <div class="layui-input-block">
+            <input type="number" name="limit_num"  lay-verify="required" autocomplete="off" placeholder="最小成团人数" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 开团有效时间(小时)</label>
+          <div class="layui-input-block">
+            <input type="number" name="validity_time"  lay-verify="required" autocomplete="off" placeholder="开团有效时间(小时)" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 限购数量</label>
+          <div class="layui-input-block">
+            <input type="number" name="astrict_num"  lay-verify="required" autocomplete="off" placeholder="限购数量 0 为不限购" class="layui-input">
+          </div>
+        </div>
+
+        <!--<div class="layui-form-item">-->
+          <!--<label class="layui-form-label">库存</label>-->
+          <!--<div class="layui-input-block">-->
+            <!--<input type="number" name="goods_number"  lay-verify="required" autocomplete="off" placeholder="库存" class="layui-input">-->
+          <!--</div>-->
+        <!--</div>-->
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 开始时间</label>
+          <div class="layui-input-block">
+            <input type="text" name="start_time" id="start_time" lay-verify="datetime" placeholder="请选择开始时间" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">排序</label>
+          <div class="layui-input-block">
+            <input type="number" name="sort_order"  lay-verify="required" autocomplete="off" placeholder="排序" value="0" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 虚拟成团下限</label>
+          <div class="layui-input-block">
+            <input type="number" name="limit_simulation"  lay-verify="required" autocomplete="off" placeholder="虚拟成团下限" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">是否开启虚拟成团</label>
+          <div class="layui-input-block">
+            <input type="checkbox" checked value="1" name="is_simulation" lay-skin="switch" lay-filter="component-form-switchTest" lay-text="是|否">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">是否显示</label>
+          <div class="layui-input-block">
+            <input type="checkbox" checked value="1" name="is_team" lay-skin="switch" lay-filter="component-form-switchTest" lay-text="是|否">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="LAY-team-goods-create">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+
+<script>
+  layui.data.sendParams = function(params) {
+    var goods_id = params.id;
+    layui.use(['admin', 'form', 'laydate', 'upload'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , layer = layui.layer
+              , laydate = layui.laydate
+              , form = layui.form
+              , table = layui.table;
+
+      form.render(null, 'LAY-team-goods-create');
+
+      laydate.render({elem: '#start_time', format: 'yyyy-MM-dd HH:mm:ss', type: 'datetime'});
+
+      admin.req({
+        url: layui.setter.server_url + "/goods/all",
+        type: "get",
+        done: function (res) {
+          var data = res.data;
+          var html = '';
+          for (i = 0; i < data.length; i++) {
+            var selected = data[i].id == goods_id ? 'selected' : ''
+            html += '<option '+ selected +' value="' + data[i].id + '">' + data[i].goods_name + '</option>';
+          }
+          $('select[name="goods_id"]').append(html);
+          form.render('select');
+        }
+      });
+
+      admin.req({
+        url: layui.setter.server_url + "/get_config",
+        type: "get",
+        data:{key:['team_num', 'limit_num', 'validity_time', 'limit_simulation']},
+        done: function (res) {
+          var data = res.data;
+          $('input[name="team_num"]').val(data.team_num);
+          $('input[name="limit_num"]').val(data.limit_num);
+          $('input[name="validity_time"]').val(data.validity_time);
+          $('input[name="limit_simulation"]').val(data.limit_simulation);
+          form.render('select');
+        }
+      });
+
+
+      /* 监听提交 */
+      form.on('submit(LAY-team-goods-create)', function (data) {
+        data.field.is_team = data.field.is_team ? 1 : 0;
+        data.field.is_simulation = data.field.is_simulation ? 1 : 0;
+        admin.req({
+          url: layui.setter.server_url + "/team_goods/create",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            }, function () {
+              if (goods_id == undefined) {
+                table.reload('team_goods_list', {});
+              } else {
+                table.reload('goods_list', {});
+              }
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

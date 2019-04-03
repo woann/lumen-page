@@ -1,0 +1,97 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善权限信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="LAY-permission-update">
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">权限名称</label>
+          <div class="layui-input-block">
+            <input type="text" name="name"  lay-verify="required"autocomplete="off" placeholder="" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">选择接口</label>
+          <div class="layui-input-block" id="api_list">
+            <input  type="checkbox" title="全选" lay-filter="all"><br>
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="LAY-permission-update">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params) {
+    var permission_id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    layui.use(['admin', 'form', 'laydate'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , table = layui.table
+              , layer = layui.layer
+              , laydate = layui.laydate
+              , form = layui.form;
+
+      form.render(null, 'LAY-permission-update');
+
+      laydate.render({
+        elem: '#LAY-LAY-permission-update-date'
+      });
+
+      admin.req({
+        url: layui.setter.server_url + "/permission_create?id="+permission_id,
+        type: "get",
+        done: function (res) {
+          permission = res.data.permission;
+          routes = res.data.routes;
+          for (i = 0; i < routes.length; i++) {
+            $('#api_list').append(
+                    '<div style="width: 25%;float: left"><input class="routes" type="checkbox" '+ routes[i].checked +' name="routes[]" value="'+routes[i].route+'" title="'+routes[i].route + '"></div>'
+            );
+          }
+          $('input[name="name"]').val(permission.name);
+          form.render();
+        }
+      });
+
+      form.on('checkbox(all)', function(data){
+        if (data.elem.checked) {
+          $('.routes').prop('checked',true);
+        } else {
+          $('.routes').prop('checked',false);
+        }
+        form.render();
+      });
+      /* 监听提交 */
+      form.on('submit(LAY-permission-update)', function (data) {
+        data.field.id = permission_id;
+        admin.req({
+          url: layui.setter.server_url + "/permission_update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              ,icon: 1
+              ,time: 1000
+            }, function(){
+              table.reload('permission_list', {
+              });
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

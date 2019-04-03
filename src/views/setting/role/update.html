@@ -1,0 +1,136 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善角色信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="LAY-role-update">
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">名称</label>
+          <div class="layui-input-block">
+            <input type="text" name="name"  lay-verify="required"autocomplete="off" placeholder="角色名称" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">描述</label>
+          <div class="layui-input-block">
+            <input type="text" name="des"  lay-verify="required" autocomplete="off" placeholder="描述该角色" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">选择菜单</label>
+          <div class="layui-input-block" id="menu_list">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">选择权限</label>
+          <div class="layui-input-block" id="permission_list">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="LAY-role-update">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  //定义一个 lay-done 对应的全局方法，以供动态模板执行
+  layui.data.sendParams = function(params) {
+    var role_id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    layui.use(['admin', 'form', 'laydate'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , table = layui.table
+              , layer = layui.layer
+              , laydate = layui.laydate
+              , form = layui.form;
+
+      form.render();
+      laydate.render({
+        elem: '#LAY-LAY-role-update-date'
+      });
+      /*获取权限列表*/
+      admin.req({
+        url: layui.setter.server_url + "/role_create?id="+role_id,
+        type: "get",
+        done: function (res) {
+          for (i = 0; i < res.data.length; i++) {
+            $('#permission_list').append(
+                    '<input type="checkbox" checked="'+ res.data[i].checked +'" name="permission[]" value="' + res.data[i].id + '" title="' + res.data[i].name + '">'
+            );
+          }
+          form.render();
+        }
+      });
+
+      admin.req({
+        url: layui.setter.server_url + "/role_update",
+        type: "get",
+        data:{id:role_id},
+        done: function (res) {
+          menu_list = res.data.menu_list;
+          role = res.data.role;
+          for (i = 0; i < menu_list.length; i++) {
+            $('#menu_list').append(
+                    '<input type="checkbox" '+ menu_list[i].checked +' lay-filter="menu_check" class="menu_check" lay-skin="primary"  data-pid="' + menu_list[i].pid + '" data-ppid="' + menu_list[i].ppid + '"  name="menu[]" value="' + menu_list[i].id + '" title="' + menu_list[i].title + '"><br>'
+            );
+          }
+          $('input[name="name"]').val(role.name);
+          $('input[name="des"]').val(role.des);
+          form.render();
+        }
+      });
+      form.on('checkbox(menu_check)', function (data) {
+        id = data.value;
+        var pid = $(this).attr('data-pid');
+        var ppid = $(this).attr('data-ppid');
+        if (data.elem.checked) {
+          $('.menu_check[data-pid = "' + id + '"]').prop('checked', true);
+          $('.menu_check[data-ppid = "' + id + '"]').prop('checked', true);
+          $('.menu_check[value = "' + pid + '"]').prop('checked', true);
+          $('.menu_check[value = "' + ppid + '"]').prop('checked', true);
+        } else {
+          $('.menu_check[data-pid = "' + id + '"]').prop('checked', false);
+          $('.menu_check[data-ppid = "' + id + '"]').prop('checked', false);
+          if ($('.menu_check[data-pid = "' + pid + '"]:checked').length == 0) {
+            $('.menu_check[value = "' + pid + '"]').prop('checked', false);
+          }
+          if ($('.menu_check[data-pid = "' + ppid + '"]:checked').length == 0) {
+            $('.menu_check[value = "' + ppid + '"]').prop('checked', false);
+          }
+        }
+        top.layui.form.render()
+
+      });
+
+      /* 监听提交 */
+      form.on('submit(LAY-role-update)', function (data) {
+        data.field.id = role_id;
+        admin.req({
+          url: layui.setter.server_url + "/role_update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              ,icon: 1
+              ,time: 1000
+            }, function(){
+              table.reload('role_list', {
+              });
+              // window.location.reload();
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

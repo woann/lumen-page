@@ -1,0 +1,135 @@
+<title>角色管理</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>系统设置</cite></a>
+        <a><cite>角色管理</cite></a>
+        <a><cite>角色列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">角色列表</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="LAY-role-list" lay-filter="LAY-role-list"></table>
+
+                    <script type="text/html" id="LAY-role-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="add">添加角色</button>
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-role-list-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,setter = layui.setter;
+
+        table.render({
+            elem: '#LAY-role-list'
+            ,url:setter.server_url + '/role_list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-role-list-toolbarDemo'
+            ,title: '角色列表'
+            ,cols: [[
+                {type: 'checkbox', fixed: 'left'}
+                ,{field:'name', title:'名称', edit: 'text'}
+                ,{field:'des', title:'描述',  edit: 'text'}
+                ,{field:'created_at', title:'创建时间'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-role-list-barDemo'}
+            ]]
+            ,page: false
+            ,id:'role_list'
+        });
+
+        //头工具栏事件
+        table.on('toolbar(LAY-role-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'add':
+                    layui.use(['admin','view'],function(){
+                        var admin=layui.admin,
+                            view=layui.view;
+                        admin.popup({
+                            "title":"添加角色"
+                            ,area: ['60%', '80%']
+                            ,id:'create-menu'
+                            ,success: function(){
+                                view(this.id).render('setting/role/create');
+                            }
+                        });
+                    });
+                    break;
+            };
+        });
+
+        table.on('edit(LAY-role-list)', function(obj){
+            var value = obj.value //得到修改后的值
+                ,data = obj.data //得到所在行所有键值
+                ,field = obj.field; //得到字段
+            var param = {id:data.id};
+            param[field] = value;
+            param['type'] = 'table_edit';
+            admin.req({
+                url:layui.setter.server_url + "/role_update",
+                type:"post",
+                data:param,
+                done:function(res){
+                    layer.msg(res.msg, {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    }, function(){});
+                }
+            });
+        });
+        //监听行工具事件
+        table.on('tool(LAY-role-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('数据千万条,勿删错一条,您的手一抖,开发两行泪~', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/role_del",
+                        type:"post",
+                        data:{id:obj.data.id},
+                        done:function(res){
+                            obj.del();
+                            layer.close(index);
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑角色"
+                        ,area: ['60%', '80%']
+                        ,id:'update-menu'
+                        ,success: function(){
+                            view(this.id).render('setting/role/update',{id:obj.data.id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

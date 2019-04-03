@@ -1,0 +1,128 @@
+<title>开团列表</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>团购管理</cite></a>
+        <a><cite>开团列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">开团列表</div>
+                <div class="layui-card-body">
+                    <div class="demoTable" style="margin-bottom: 5px">
+                        <form class="layui-form" action="" lay-filter="LAY-team-search">
+                            <div class="layui-inline">
+                                <input class="layui-input" name="keyword" id="LAY-team-search" autocomplete="off" placeholder="小区名称">
+                            </div>
+                            <button class="layui-btn" lay-submit="" lay-filter="LAY-team-search">搜索</button>
+                        </form>
+                    </div>
+                    <table class="layui-hide" id="LAY-team-list" lay-filter="LAY-team-list"></table>
+
+                    <script type="text/html" id="LAY-team-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="add">添加拼购</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-team-list-barDemo">
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-href="/order/index/is_team=1/team_id={{ d.id }}">订单</a>
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="team_status">
+    {{#  if(d.status == 0){ }}
+    <span class="layui-btn layui-btn-xs layui-btn-normal">未开始</span>
+    {{#  } else if(d.status == 1) { }}
+    <span class="layui-btn layui-btn-xs layui-btn-warm">进行中</span>
+    {{#  } else if(d.status == 2) { }}
+    <span class="layui-btn layui-btn-xs layui-btn-disabled">已结束</span>
+    {{#  } else if(d.status == 3) { }}
+    <span class="layui-btn layui-btn-xs ">成功</span>
+    {{#  } else if(d.status == 4) { }}
+    <span class="layui-btn layui-btn-xs layui-btn-danger">失败</span>
+    {{#  } }}
+</script>
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,form = layui.form
+            ,setter = layui.setter;
+
+        var tableIns = table.render({
+            elem: '#LAY-team-list'
+            ,url:setter.server_url + '/team/list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-team-list-toolbarDemo'
+            ,title: '开团列表'
+            ,cols: [[
+                {type: 'checkbox', fixed: 'left',width:'5%'}
+                ,{field:'plots_name', title:'小区名称',width:'10%'}
+                ,{field:'name', title:'团长姓名',width:'10%'}
+                ,{field:'goods_name', title:'商品名称',width:'10%'}
+                ,{field:'team_num', title:'成团人数',width:'8%'}
+                ,{field:'limit_num', title:'最少成团人数',width:'8%'}
+                ,{field:'status', title:'状态', templet: '#team_status',width:'5%'}
+                ,{field:'team_begin', title:'开始时间',width:'12%'}
+                ,{field:'team_end', title:'结束时间',width:'12%'}
+                ,{field:'created_at', title:'创建时间',width:'12%'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-team-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'team_list'
+        });
+
+        form.on('submit(LAY-team-search)', function(data){
+            table.reload('team_list', {
+                where: {
+                    keyword: data.field.keyword,
+                }
+            });
+            return false;
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-team-list)', function(obj){
+            if(obj.event === 'del'){
+                layer.confirm('数据千万条,勿删错一条,您的手一抖,开发两行泪~', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/administrator_del",
+                        type:"post",
+                        data:{id:obj.data.id},
+                        done:function(res){
+                            obj.del();
+                            layer.close(index);
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑开团信息"
+                        ,area: ['60%', '80%']
+                        ,id:'update-'+obj.data.id
+                        ,success: function(){
+                            view(this.id).render('leader/team/update',{id:obj.data.id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

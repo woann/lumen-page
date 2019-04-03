@@ -1,0 +1,241 @@
+<title>团长列表</title>
+<style type="text/css">
+    #layui-card-body-leader .layui-table-cell{
+        height:auto!important;
+        white-space:normal;
+    }
+    .avatar{
+        width: 50px;
+        border-radius:25px;
+    }
+</style>
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>团购管理</cite></a>
+        <a><cite>团长列表</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">团长列表</div>
+                <div class="layui-card-body" id="layui-card-body-leader">
+                    <div class="demoTable" style="margin-bottom: 5px">
+                        搜索团长：
+                        <div class="layui-inline">
+                            <input class="layui-input" name="keyword" id="LAY-leader-search" autocomplete="off" placeholder="团长姓名">
+                        </div>
+                        <button class="layui-btn" data-type="reload">搜索</button>
+                    </div>
+
+                    <table class="layui-hide" id="LAY-leader-list" lay-filter="LAY-leader-list"></table>
+
+                    <script type="text/html" id="LAY-leader-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="add">添加团长</button>
+                            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="bat_del">批量删除</button>
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-leader-list-barDemo">
+                        {{#  if(d.check_state == 1){ }}
+                        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="pass">通过</a>
+                        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="refuse">拒绝</a>
+                        {{# } }}
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="leader_status">
+    {{#  if(d.check_state == 1){ }}
+    <span class="layui-btn layui-btn-xs layui-btn-normal">待审核</span>
+    {{#  } else if(d.check_state == 2) { }}
+    <span class="layui-btn layui-btn-xs">审核通过</span>
+    {{#  } else if(d.check_state == 3) { }}
+    <span class="layui-btn layui-btn-xs layui-btn-disabled">未通过</span>
+    {{#  } }}
+
+</script>
+<script type="text/html" id="avatar">
+    <div><img  class="avatar" src="{{ d.headimgurl }}"></div>
+</script>
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,form = layui.form
+            ,setter = layui.setter;
+
+        var tableIns = table.render({
+            elem: '#LAY-leader-list'
+            ,url:setter.server_url + '/leader/list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-leader-list-toolbarDemo'
+            ,title: '团长列表'
+            ,cols: [[
+                {type: 'checkbox', width:'5%'}
+                ,{field:'headimgurl', title:'头像',width:'5%',templet:'#avatar'}
+                ,{field:'name', title:'团长姓名',width:'8%'}
+                ,{field:'tel', title:'电话',width:'8%'}
+                ,{field:'plots_address', title:'小区名称',width:'10%'}
+                ,{field:'address', title:'代收地址',width:'10%'}
+                ,{field:'wx_account', title:'微信号',width:'8%'}
+                ,{field:'wx_group_count', title:'群人数',width:'5%'}
+                ,{field:'check_state', title:'审核状态', templet: '#leader_status',width:'8%'}
+                ,{field:'check_time', title:'审核时间',width:'10%'}
+                ,{field:'created_at', title:'创建时间',width:'10%'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-leader-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'leader_list'
+        });
+
+        var $ = layui.$, active = {
+            reload: function(){
+                var val = $('#LAY-leader-search').val();
+                table.reload('leader_list', {
+                    where: {
+                        keyword: val
+                    }
+                });
+            }
+        };
+
+
+        $('.demoTable .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        function delLeader(ids)
+        {
+            layer.confirm('是否删除该团长?', function(index){
+                admin.req({
+                    url:layui.setter.server_url + "/leader/del",
+                    type:"post",
+                    data:{id:ids},
+                    done:function(res){
+                        layer.close(index);
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            tableIns.reload({});
+                        });
+                    }
+                });
+            });
+        }
+
+        //头工具栏事件
+        table.on('toolbar(LAY-leader-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'add':
+                    layui.use(['admin','view'],function(){
+                        var admin=layui.admin,
+                            view=layui.view;
+                        admin.popup({
+                            "title":"添加团长"
+                            ,area: ['60%', '80%']
+                            ,id:'LAY-leader-create'
+                            ,success: function(){
+                                view(this.id).render('leader/leader/create');
+                            }
+                        });
+                    });
+                    break;
+                case 'bat_del' :
+                    var data = checkStatus.data;
+                    if (data.length == 0){
+                        layer.msg('请选择要删除的数据');
+                        return false;
+                    }
+                    var ids = '';
+                    for (i=0; i<data.length; i++) {
+                        if (i == 0) {
+                            ids = data[i].id;
+                        } else {
+                            ids += ',' + data[i].id
+                        }
+                    }
+                    delLeader(ids);
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-leader-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                delLeader(obj.data.id);
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑团长"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-leader-update'
+                        ,success: function(){
+                            view(this.id).render('leader/leader/update',{id:obj.data.id});
+                        }
+                    });
+                });
+            }
+            else if(obj.event === 'pass'){
+                layer.confirm('是否通过该团长审核?', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/leader/pass",
+                        type:"post",
+                        data:{id:obj.data.id},
+                        done:function(res){
+                            layer.close(index);
+                            layer.msg(res.msg, {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                tableIns.reload({});
+                            });
+                        }
+                    });
+                });
+            }
+
+            else if(obj.event === 'refuse'){
+                layer.prompt({
+                    title:'请输入拒绝原因'
+                    ,formType: 2
+                    ,value: data.fail_reason
+                }, function(value, index){
+                    admin.req({
+                        url:layui.setter.server_url + "/leader/refuse",
+                        type:"post",
+                        data:{id:obj.data.id,fail_reason:value},
+                        done:function(res){
+                            layer.close(index);
+                            layer.msg(res.msg, {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                tableIns.reload({});
+                            });
+                        }
+                    });
+                });
+            }
+        });
+    });
+</script>

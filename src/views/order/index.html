@@ -1,0 +1,321 @@
+<title>订单列表</title>
+<style type="text/css">
+    #layui-card-body-order .layui-table-cell{
+        height:auto!important;
+        white-space:normal;
+    }
+</style>
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>订单管理</cite></a>
+        <a><cite>订单列表</cite></a>
+    </div>
+</div>
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">订单列表</div>
+                <div class="layui-card-body" id="layui-card-body-order">
+                    <div class="demoTable" style="margin-bottom: 5px">
+                        <form class="layui-form" action="" lay-filter="LAY-order-search">
+                            <div class="layui-inline">
+                                <label>订单编号:</label>
+                                <input class="layui-input" name="order_sn"  autocomplete="off" placeholder="订单号/手机号">
+                            </div>
+                            <div class="layui-inline">
+                                <label>收货人:</label>
+                                <input class="layui-input" name="consignee"  autocomplete="off" placeholder="收货人">
+                            </div>
+                            <div class="layui-inline">
+                                <label>收货电话:</label>
+                                <input class="layui-input" name="tel"  autocomplete="off" placeholder="收货电话">
+                            </div>
+                            <div class="layui-inline">
+                                <label>　</label>
+                                <button style="display: block" class="layui-btn" lay-submit="" lay-filter="LAY-order-search">搜索</button>
+                            </div>
+                            <div class="layui-inline">
+                                <label>　</label>
+                                <button style="display: block" class="layui-btn layui-btn-normal" lay-submit="" lay-filter="LAY-order-download"><i class="layui-icon layui-icon-download-circle"></i>  导出excel</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="layui-tab" style="margin-bottom: 15px" lay-filter="order">
+                        <ul class="layui-tab-title order_tab" >
+                            <li id="all" class="layui-this">全部</li>
+                            <li id="wait_pay">待支付</li>
+                            <li id="wait_send">待发货</li>
+                            <li id="sending">配送中</li>
+                            <li id="no_confirm">未核销</li>
+                            <li id="already_confirm">已核销</li>
+                            <li id="refund">退货</li>
+                        </ul>
+                    </div>
+                    <table class="layui-hide" id="LAY-order-list" lay-filter="LAY-order-list"></table>
+                    <script type="text/html" id="LAY-order-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="bat_del">批量删除</button>
+                            <button class="layui-btn layui-btn-sm  layui-btn-warm" lay-event="bat_ship">批量发货</button>
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-order-list-barDemo">
+                        {{#  if(d.pay_status == 2 && d.shipping_status == 0) { }}
+                        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="ship">设为发货</a>
+                        {{# } }}
+                        <a class="layui-btn layui-btn-xs" lay-event="detail">详情</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="goods">
+    {{#  layui.each(d.goods_list, function(index, item){ }}
+    <span>商品名称: <a style="color: green;" lay-href="/goods/goods/index/goods_name={{ item.goods_name }}">{{ item.goods_name }}</a></span><br>
+    <span>商品编号: {{ item.goods_sn }}</span><br>
+    <span>购买价格: {{ item.goods_price }}</span><br>
+    <span>购买数量: {{ item.goods_number }}</span>
+    {{#  }); }}
+</script>
+<script type="text/html" id="consignee">
+    <span>收货人: {{ d.consignee }}</span><br>
+    <span>收货电话: {{ d.tel }}</span><br>
+    <span>收货地址: {{ d.address }}</span><br>
+</script>
+
+<script type="text/html" id="order">
+    <span>订单编号: <span style="color: red;">{{ d.order_sn }}</span></span><br>
+    <span>商品金额: &yen;{{ d.goods_amount }}</span><br>
+    <span>配送费: &yen;{{ d.shipping_fee }}</span><br>
+    <span>应付金额: &yen;{{ d.order_amount }}</span><br>
+    <span>实付金额: &yen;{{ d.money_paid }}</span>
+</script>
+
+<script type="text/html" id="time">
+    <span>下单时间:</span><br>
+    <span>{{ d.add_time }}</span><br>
+    <span>支付时间:</span><br>
+    <span>{{ d.pay_time }}</span><br>
+    <span>配送时间:</span><br>
+    <span>{{ d.shipping_time }}</span><br>
+    <span>收货时间:</span><br>
+    <span>{{ d.confirm_take_time }}</span><br>
+</script>
+
+<script type="text/html" id="status">
+    <span>订单状态:
+         {{#  if(d.order_status == 0){ }}
+        <span class="layui-btn layui-btn-xs layui-btn-normal">未核销</span>
+        {{#  } else if(d.order_status == 1) { }}
+        <span class="layui-btn layui-btn-xs">已核销</span>
+        {{#  } else if(d.order_status == 2) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-primary">已取消</span>
+        {{#  } else if(d.order_status == 3) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-disabled">无效订单</span>
+        {{#  } else if(d.order_status == 4) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-warm">退货</span>
+        {{#  } }}
+    </span><br>
+    <span>支付状态:
+         {{#  if(d.pay_status == 0){ }}
+        <span class="layui-btn layui-btn-xs layui-btn-normal">未支付</span>
+        {{#  } else if(d.pay_status == 1) { }}
+        <span class="layui-btn layui-btn-xs  layui-btn-warm">支付中</span>
+        {{#  } else if(d.pay_status == 2) { }}
+        <span class="layui-btn layui-btn-xs">已支付</span>
+        {{#  } }}
+    </span><br>
+    <span>配送状态:
+         {{#  if(d.shipping_status == 0){ }}
+        <span class="layui-btn layui-btn-xs layui-btn-normal">未发货</span>
+        {{#  } else if(d.shipping_status == 1) { }}
+        <span class="layui-btn layui-btn-xs">已发货</span>
+        {{#  } else if(d.shipping_status == 2) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-primary">已收货</span>
+        {{#  } else if(d.shipping_status == 3) { }}
+        <span class="layui-btn layui-btn-xs layui-btn-disabled">备货中</span>
+        {{#  } }}
+    </span>
+</script>
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,form = layui.form
+            ,element = layui.element
+            ,setter = layui.setter;
+        var team_id = layui.router().search.team_id;
+        var is_team = layui.router().search.is_team;
+        var type = 'all';
+        var tableIns = table.render({
+            elem: '#LAY-order-list'
+            ,url:setter.server_url + '/order/list'
+            ,toolbar: '#LAY-order-list-toolbarDemo'
+            ,where:{
+                access_token: layui.data('layuiAdmin').access_token,
+                team_id : team_id,
+                is_team: is_team,
+                type:type
+            }
+            // ,toolbar: '#LAY-order-list-toolbarDemo'
+            ,title: '订单列表'
+            ,cols: [[
+                {type: 'checkbox', width:'5%'}
+                ,{ title:'商品信息',width:'20%',templet:'#goods'}
+                ,{ title:'收货信息',width:'20%',templet:'#consignee'}
+                ,{ title:'订单信息',width:'20%',templet:'#order'}
+                ,{ title:'状态',width:'12%',templet:'#status'}
+                ,{ title:'时间信息',width:'12%',templet:'#time'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-order-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'order_list'
+        });
+        setTimeout(function(){
+            if (is_team == 1){
+                $('dd[data-name="team_order"]').addClass('layui-this');
+            } else {
+                $('dd[data-name="order"]').addClass('layui-this');
+            }
+        },200)
+        form.on('submit(LAY-order-search)', function(data){
+            console.log(data);
+            table.reload('order_list', {
+                where: {
+                    consignee: data.field.consignee,
+                    order_sn: data.field.order_sn,
+                    tel:data.field.tel
+                }
+            });
+            return false;
+        });
+        // 下载excel
+        form.on('submit(LAY-order-download)', function(data){
+            var param = '?';
+            var where = tableIns.config.where;
+            where.type = $('.order_tab li.layui-this').attr('id');
+            for (var k in where){
+                if (where[k] == undefined) {
+                    continue;
+                }
+                param += k + '=' + where[k] + '&'
+            }
+            param += 'consignee=' + data.field.consignee + '&order_sn=' + data.field.order_sn + '&tel=' + data.field.tel;
+            window.open(layui.setter.server_url + '/order/export' + param)
+            return false;
+        });
+
+        //切换订单状态选项卡
+        element.on('tab(order)', function(data){
+            type = data.elem.context.id;
+            table.reload('order_list', {
+                where: {
+                    type: type,
+                }
+            });
+        });
+
+
+        function delOrder(ids)
+        {
+            layer.confirm('是否删除所选订单?', function(index){
+                admin.req({
+                    url:layui.setter.server_url + "/order/del",
+                    type:"post",
+                    data:{id:ids},
+                    done:function(res){
+                        layer.close(index);
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            table.reload('order_list', {
+                                where: {
+                                    type: type,
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        }
+
+        function shipOrder(ids)
+        {
+            layer.confirm('是否将所选订单标记为已发货?', function(index){
+                admin.req({
+                    url:layui.setter.server_url + "/order/ship",
+                    type:"post",
+                    data:{id:ids},
+                    done:function(res){
+                        layer.close(index);
+                        layer.msg(res.msg, {
+                            offset: '15px'
+                            ,icon: 1
+                            ,time: 1000
+                        }, function(){
+                            table.reload('order_list', {
+                                where: {
+                                    type: type,
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        }
+
+        table.on('toolbar(LAY-order-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            var data = checkStatus.data;
+            if (data.length == 0){
+                layer.msg('请选择要操作的订单');
+                return false;
+            }
+            var ids = '';
+            for (i=0; i<data.length; i++) {
+                if (i == 0) {
+                    ids = data[i].order_id;
+                } else {
+                    ids += ',' + data[i].order_id
+                }
+            }
+            switch(obj.event){
+                case 'bat_del' :
+                    delOrder(ids);
+                    break;
+                case 'bat_ship' :
+                    shipOrder(ids);
+                    break;
+            };
+        });
+        
+        //监听行工具事件
+        table.on('tool(LAY-order-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                delOrder(obj.data.order_id);
+            } else if(obj.event === 'ship'){
+                shipOrder(obj.data.order_id);
+            } else if(obj.event === 'detail'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"订单详情"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-order-detail'
+                        ,success: function(){
+                            view(this.id).render('order/detail',{id:obj.data.order_id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

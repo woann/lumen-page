@@ -1,0 +1,84 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善管理员信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="LAY-administrator-create">
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">账号</label>
+          <div class="layui-input-block">
+            <input type="text" name="username"  lay-verify="required"autocomplete="off" placeholder="登录用户名" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">密码</label>
+          <div class="layui-input-block">
+            <input type="password" name="password"  lay-verify="required" autocomplete="off" placeholder="输入密码" class="layui-input">
+          </div>
+        </div>
+
+        <div class="layui-form-item">
+          <label class="layui-form-label">选择角色</label>
+          <div class="layui-input-block">
+            <select name="role_id"  id="role_list" lay-verify="required">
+            </select>
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="LAY-administrator-create">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  layui.use(['admin', 'form', 'laydate'], function(){
+    var $ = layui.$
+            ,admin = layui.admin
+            ,layer = layui.layer
+            , table = layui.table
+            ,form = layui.form;
+    form.render(null, 'LAY-administrator-create');
+    /*获取父级菜单选择框数据*/
+    admin.req({
+      url:layui.setter.server_url + "/administrator_create",
+      type:"get",
+      done:function(res){
+        for (i=0;i<res.data.length;i++) {
+          $('#role_list').append(
+                  '<option value="'+res.data[i].id+'">'+res.data[i].name+'</option>'
+          );
+        }
+        form.render('select');
+      }
+    });
+    /* 监听提交 */
+    form.on('submit(LAY-administrator-create)', function(data){
+      admin.req({
+        url:layui.setter.server_url + "/administrator_create",
+        type:"post",
+        data:data.field,
+        done:function(res){
+          layer.closeAll();
+          layer.msg(res.msg, {
+            offset: '15px'
+            ,icon: 1
+            ,time: 1000
+          }, function(){
+            table.reload('administrator_list', {
+            });
+            // window.location.reload();
+          });
+        }
+      });
+      return false;
+    });
+  });
+</script>

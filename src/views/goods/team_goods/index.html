@@ -1,0 +1,157 @@
+<title>拼团商品</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>商品管理</cite></a>
+        <a><cite>拼团商品</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">拼团商品列表</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="LAY-team-goods-list" lay-filter="LAY-team-goods-list"></table>
+
+                    <script type="text/html" id="LAY-team-goods-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="add">添加拼团商品</button>
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-team-goods-list-barDemo">
+                        {{#  if(d.is_audit == 0){ }}
+                        <a class="layui-btn layui-btn-xs layui-btn-normal" lay-event="pass">通过</a>
+                        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="refuse">拒绝</a>
+                        {{# } }}
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/html" id="team_goods_status">
+    {{#  if(d.is_audit == 0){ }}
+    <span class="layui-btn layui-btn-xs layui-btn-normal">待审核</span>
+    {{#  } else if(d.is_audit == 1) { }}
+    <span class="layui-btn layui-btn-xs layui-btn-disabled">未通过</span>
+    {{#  } else if(d.is_audit == 2) { }}
+    <span class="layui-btn layui-btn-xs">审核通过</span>
+    {{#  } }}
+</script>
+<script type="text/html" id="is_team">
+    <input type="checkbox" name="is_team" value="{{ d.id }}" lay-skin="switch" lay-text="是|否" lay-filter="switch" {{ d.is_team == 1 ? 'checked' : '' }}>
+</script>
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,form = layui.form
+            ,setter = layui.setter;
+
+        table.render({
+            elem: '#LAY-team-goods-list'
+            ,url:setter.server_url + '/team_goods/list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-team-goods-list-toolbarDemo'
+            ,title: '拼团商品表'
+            ,cols: [[
+                {type: 'checkbox', fixed: 'left',width:'5%'}
+                ,{field:'username', title:'操作人',width:'5%'}
+                ,{field:'goods_name', title:'商品名称',width:'10%'}
+                ,{field:'team_price', title:'拼团价',width:'5%'}
+                ,{field:'team_num', title:'几人团',width:'5%'}
+                ,{field:'limit_num', title:'最少成团人数',width:'10%'}
+                ,{field:'validity_time', title:'有效时间(h)',width:'10%'}
+                ,{field:'goods_number', title:'库存',width:'5%'}
+                ,{field:'is_team', title:'是否显示',width:'10%',templet:'#is_team'}
+                ,{field:'is_audit', title:'审核状态', templet: '#team_goods_status',width:'10%'}
+                ,{field:'start_time', title:'开始时间',width:'12%'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-team-goods-list-barDemo'}
+            ]]
+            ,page: true
+            ,id:'team_goods_list'
+        });
+        form.on('switch(switch)', function(obj){
+            var value = obj.elem.checked ? '1' : '0';
+            admin.req({
+                url:layui.setter.server_url + "/team_goods/switch",
+                type:"post",
+                data:{id:this.value, key:this.name, value:value},
+                done:function(res){
+                    layer.msg(res.msg, {
+                        offset: '15px'
+                        ,icon: 1
+                        ,time: 1000
+                    }, function(){});
+                }
+            });
+        });
+        //头工具栏事件
+        table.on('toolbar(LAY-team-goods-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'add':
+                    layui.use(['admin','view'],function(){
+                        var admin=layui.admin,
+                            view=layui.view;
+                        admin.popup({
+                            "title":"添加拼团商品"
+                            ,area: ['60%', '80%']
+                            ,id:'LAY-team-goods-create'
+                            ,success: function(){
+                                view(this.id).render('goods/team_goods/create');
+                            }
+                        });
+                    });
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-team-goods-list)', function(obj){
+            var data = obj.data;
+            if(obj.event === 'del'){
+                layer.confirm('是否删除所选拼团商品?', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/team_goods/del",
+                        type:"post",
+                        data:{id:obj.data.id},
+                        done:function(res){
+                            layer.close(index);
+                            layer.msg(res.msg, {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                table.reload('team_goods_list');
+                            });
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑拼团商品"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-team-goods-update'
+                        ,success: function(){
+                            view(this.id).render('goods/team_goods/update',{id:obj.data.id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

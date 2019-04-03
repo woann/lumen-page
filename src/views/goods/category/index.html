@@ -1,0 +1,117 @@
+<title>商品分类</title>
+
+<div class="layui-card layadmin-header">
+    <div class="layui-breadcrumb" lay-filter="breadcrumb">
+        <a lay-href="">主页</a>
+        <a><cite>商品管理</cite></a>
+        <a><cite>商品分类</cite></a>
+    </div>
+</div>
+
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header">分类列表</div>
+                <div class="layui-card-body">
+                    <table class="layui-hide" id="LAY-category-list" lay-filter="LAY-category-list"></table>
+                    <script type="text/html" id="LAY-category-list-toolbarDemo">
+                        <div class="layui-btn-container">
+                            <button class="layui-btn layui-btn-sm" lay-event="add">添加分类</button>
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>-->
+                            <!--<button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>-->
+                        </div>
+                    </script>
+                    <script type="text/html" id="LAY-category-list-barDemo">
+                        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    layui.use(['admin', 'table'], function(){
+        var admin = layui.admin
+            ,table = layui.table
+            ,setter = layui.setter;
+
+        table.render({
+            elem: '#LAY-category-list'
+            ,url:setter.server_url + '/category/list'
+            ,where: {
+                access_token: layui.data('layuiAdmin').access_token
+            }
+            ,toolbar: '#LAY-category-list-toolbarDemo'
+            ,title: '商品分类表'
+            ,cols: [[
+                {field:'cat_name', title:'分类名称'}
+                ,{field:'keywords', title:'关键字'}
+                ,{field:'cat_desc', title:'描述'}
+                ,{fixed: 'right', title:'操作', toolbar: '#LAY-category-list-barDemo'}
+            ]]
+            ,page: false
+            ,id:'category_list'
+        });
+
+        //头工具栏事件
+        table.on('toolbar(LAY-category-list)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch(obj.event){
+                case 'add':
+                    layui.use(['admin','view'],function(){
+                        var admin=layui.admin,
+                            view=layui.view;
+                        admin.popup({
+                            "title":"添加商品分类"
+                            ,area: ['60%', '80%']
+                            ,id:'LAY-category-create'
+                            ,success: function(){
+                                view(this.id).render('goods/category/create');
+                            }
+                        });
+                    });
+                    break;
+            };
+        });
+
+        //监听行工具事件
+        table.on('tool(LAY-category-list)', function(obj){
+            if(obj.event === 'del'){
+                layer.confirm('是否删除所选分类?', function(index){
+                    admin.req({
+                        url:layui.setter.server_url + "/category/del",
+                        type:"post",
+                        data:{cat_id:obj.data.cat_id},
+                        done:function(res){
+                            layer.close(index);
+                            layer.msg(res.msg, {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){
+                                table.reload('category_list');
+                            });
+                        }
+                    });
+                });
+            } else if(obj.event === 'edit'){
+                layui.use(['admin','view'],function(){
+                    var admin=layui.admin,
+                        view=layui.view;
+                    admin.popup({
+                        "title":"编辑商品分类"
+                        ,area: ['60%', '80%']
+                        ,id:'LAY-category-update'
+                        ,success: function(){
+                            view(this.id).render('goods/category/update',{id:obj.data.cat_id});
+                        }
+                    });
+                });
+            }
+        });
+
+    });
+</script>

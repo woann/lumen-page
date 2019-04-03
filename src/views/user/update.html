@@ -1,0 +1,127 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请完善用户信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <div id="user_update_view"></div>
+    </div>
+  </div>
+</div>
+<script type="text/html" id="user_update_form">
+  <form class="layui-form" action="" lay-filter="LAY-user-update">
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">所在小区</label>
+      <div class="layui-input-block">
+        <div class="layui-inline">
+          <select name="plots_id"  lay-verify="required" lay-search="">
+            <option value="">请选择小区</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">用户名</label>
+      <div class="layui-input-block">
+        <input type="text" name="user_name" value="{{ d.user_name }}"  lay-verify="required" autocomplete="off" placeholder="用户名" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">昵称</label>
+      <div class="layui-input-block">
+        <input type="text" name="nick_name" value="{{ d.nick_name }}" lay-verify="required" autocomplete="off" placeholder="团长名称" class="layui-input">
+      </div>
+    </div>
+
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">邮箱</label>
+      <div class="layui-input-block">
+        <input type="text" name="email" value="{{ d.email }}" lay-verify="required" autocomplete="off" placeholder="电话" class="layui-input">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">性别</label>
+      <div class="layui-input-block">
+        <input type="radio" name="sex" value="1" title="男" {{#  if(d.sex == 1){ }} checked {{# } }}>
+        <input type="radio" name="sex" value="0" title="女" {{#  if(d.sex == 0){ }} checked {{# } }}>
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <div class="layui-input-block">
+        <div class="layui-footer">
+          <button class="layui-btn" lay-submit="" lay-filter="LAY-user-update">立即提交</button>
+          <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+</script>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params) {
+    var user_id = params.id; //得到传递过来的 id 参数（或其他参数）值
+    layui.use(['admin', 'form', 'laydate'], function () {
+      var $ = layui.$
+              , admin = layui.admin
+              , table = layui.table
+              , layer = layui.layer
+              , laydate = layui.laydate
+              , laytpl = layui.laytpl
+              , form = layui.form;
+
+      form.render(null, 'LAY-user-update');
+
+      laydate.render({
+        elem: '#LAY-LAY-user-update-date'
+      });
+
+      admin.req({
+        url: layui.setter.server_url + "/user/update",
+        type: "get",
+        data: {id: user_id},
+        async: false,
+        done: function (res) {
+          plots_list = res.data.plots_list;
+          var getTpl = user_update_form.innerHTML,view = document.getElementById('user_update_view');
+          laytpl(getTpl).render(res.data.user, function(html){
+            view.innerHTML = html;
+          });
+
+          var html = '';
+          for (i = 0; i < plots_list.length; i++) {
+            html += '<option '+plots_list[i].selected+' value="' + plots_list[i].id + '">' + plots_list[i].name + '</option>';
+          }
+          $('select[name="plots_id"]').append(html);
+          form.render();
+        }
+      });
+
+
+      /* 监听提交 */
+      form.on('submit(LAY-user-update)', function (data) {
+        data.field.user_id = user_id;
+        admin.req({
+          url: layui.setter.server_url + "/user/update",
+          type: "post",
+          data: data.field,
+          done: function (res) {
+            layer.closeAll();
+            layer.msg(res.msg, {
+              offset: '15px'
+              , icon: 1
+              , time: 1000
+            }, function () {
+              table.reload('user_list', {});
+            });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>

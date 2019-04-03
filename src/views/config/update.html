@@ -1,0 +1,169 @@
+<div class="layui-fluid">
+  <div class="layui-card">
+    <div class="layui-card-header">请填写配置信息</div>
+    <div class="layui-card-body" style="padding: 15px;">
+      <form class="layui-form" action="" lay-filter="component-form-group">
+        <div id="view"></div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <div class="layui-footer">
+              <button class="layui-btn" lay-submit="" lay-filter="component-form-group">立即提交</button>
+              <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="text/html"  id="form_template">
+    {{# if (d.type === 'text') { }}  
+    <div class="layui-form-item">
+      <label class="layui-form-label">{{ d.wap_show }}</label>
+      <div class="layui-input-inline">
+        <input type="text" name="{{ d.code }}"  lay-verify="required"autocomplete="off" placeholder="{{ d.des }}" value="{{ d.value }}" class="layui-input">
+      </div>
+        <div class="layui-form-mid layui-word-aux">{{ d.des }}</div>
+    </div>
+
+    {{# } else if (d.type === 'number') { }}  
+    <div class="layui-form-item">
+        <label class="layui-form-label">{{ d.wap_show }}</label>
+        <div class="layui-input-inline">
+            <input type="number" name="{{ d.code }}"  lay-verify="required"autocomplete="off" placeholder="{{ d.des }}" value="{{ d.value }}" class="layui-input">
+        </div>
+        <div class="layui-form-mid layui-word-aux">{{ d.des }}</div>
+    </div>
+  {{# } else if(d.type === 'radio') { }}  
+    <div class="layui-form-item">
+        <label class="layui-form-label">{{ d.wap_show }}</label>
+        <div class="layui-input-inline">
+            {{#  layui.each(d.store_range, function(index, item){ }}
+                <input type="radio" name="{{ d.code }}" value="{{ index }}" {{# if (d.value == index) { }} checked {{#  } }}  title="{{ item }}">
+            {{#  }); }}
+            {{#  if(d.store_range.length === 0){ }}
+            无备选项
+            {{#  } }}
+        </div>
+        <div class="layui-form-mid layui-word-aux">{{ d.des }}</div>
+    </div>
+  {{# } else if(d.type=== 'select') { }}  
+    <div class="layui-form-item">
+        <label class="layui-form-label">{{ d.wap_show }}</label>
+        <div class="layui-input-inline">
+            <select name="{{ d.code }}" lay-verify="required">
+                <option value=""></option>
+                {{#  layui.each(d.store_range, function(index, item){ }}
+                <option {{# if (d.value == index) { }} selected {{#  } }} value="{{ index }}">{{ item }}</option>
+                {{#  }); }}
+                {{#  if(d.store_range.length === 0){ }}
+                无备选项
+                {{#  } }}
+            </select>
+        </div>
+        <div class="layui-form-mid layui-word-aux">{{ d.des }}</div>
+    </div>
+    {{# } else if(d.type=== 'file') { }}  
+    <div class="layui-form-item">
+        <label class="layui-form-label">{{ d.wap_show }}</label>
+        <div class="layui-input-inline">
+            <button type="button" class="layui-btn" id="uploader">
+                <i class="layui-icon">&#xe67c;</i>上传文件
+            </button>
+            <input type="hidden" name="{{ d.code }}" value="{{ d.value }}" id="file_value">
+            <span id="file_text">{{ d.value }}</span>
+        </div>
+        <div class="layui-form-mid layui-word-aux">{{ d.des }}</div>
+    </div>
+  {{# } }}  
+</script>
+<script type="text/html" template lay-done="layui.data.sendParams(d.params)"></script>
+<script>
+  layui.data.sendParams = function(params) {
+    var config_id = params.id;
+    layui.use(['admin', 'form', 'laydate','upload'], function(){
+      var $ = layui.$
+          ,admin = layui.admin
+          ,laytpl = layui.laytpl
+          ,layer = layui.layer
+          ,laydate = layui.laydate
+          ,table = layui.table
+          ,form = layui.form
+          ,upload = layui.upload;
+      form.render(null, 'component-form-group');
+
+      laydate.render({
+        elem: '#LAY-component-form-group-date'
+      });
+
+      admin.req({
+        url:layui.setter.server_url + "/config_update",
+        data:{id:config_id},
+        type:"get",
+          done:function(res){
+          var getTpl = form_template.innerHTML
+                  ,view = document.getElementById('view');
+          laytpl(getTpl).render(res.data, function(html){
+            view.innerHTML = html;
+          });
+            form.render();
+            if(res.data.type == 'file') {
+                //如果该配置是文件类型
+                var uploadInst = upload.render({
+                    elem: '#uploader' //绑定元素
+                    ,accept : 'file'
+                    ,data:{path:'config',access_token:layui.data('layuiAdmin').access_token}
+                    ,url: layui.setter.server_url + '/upload' //上传接口
+                    ,done: function(res){
+                        if (res.code == 0) {
+                            $('#file_text').text(res.data.filename);
+                            $('#file_value').val(res.data.filename);
+                            layer.msg('上传成功,点击提交后生效', {
+                                offset: '15px'
+                                ,icon: 1
+                                ,time: 1000
+                            }, function(){});
+                        }else{
+                            layer.msg(res.msg, {
+                                offset: '15px'
+                                ,icon: 5
+                                ,time: 1000
+                            }, function(){});
+                        }
+                    }
+                    ,error: function(){
+                        layer.msg('网络繁忙', {
+                            offset: '15px'
+                            ,icon: 5
+                            ,time: 1000
+                        }, function(){});
+                    }
+                });
+
+            }
+        }
+      });
+      /* 监听提交 */
+      form.on('submit(component-form-group)', function(data){
+        admin.req({
+          url:layui.setter.server_url + "/config_update",
+          type:"post",
+          data:data.field,
+            done:function(res){
+              layer.closeAll();
+              layer.msg(res.msg, {
+                  offset: '15px'
+                  ,icon: 1
+                  ,time: 1000
+              }, function(){
+                  table.reload('config_list', {
+                  });
+                  // window.location.reload();
+              });
+          }
+        });
+        return false;
+      });
+    });
+  }
+</script>
