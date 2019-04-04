@@ -22,7 +22,7 @@ layui.extend({
   ,renderPage = function(){
     var router = layui.router()
     ,path = router.path
-    ,pathURL = admin.correctRouter(router.path.join('/'))
+    ,pathURL = admin.correctRouter(router.path.join('/'));
 
     
     

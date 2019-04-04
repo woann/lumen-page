@@ -325,6 +325,8 @@ layui.define(["laytpl", "laypage", "layer", "form", "util"],
                         "object" == typeof a.initSort && i.sort(a.initSort.field, a.initSort.type)
                     };
                 if (i.startTime = (new Date).getTime(), a.url) {
+                    a.headers = a.headers || {};
+                    a.headers[layui.setter.request.tokenName] = layui.data(layui.setter.tableName)[layui.setter.request.tokenName];
                     var r = {};
                     r[l.pageName] = e,
                         r[l.limitName] = a.limit;
@@ -336,20 +338,16 @@ layui.define(["laytpl", "laypage", "layer", "form", "util"],
                             contentType: a.contentType,
                             data: d,
                             dataType: "json",
-                            headers: a.headers || {},
+                            headers: a.headers,
                             success: function(t) {
-                                if (t.code == 401) {
+                                if (t.code == layui.setter.response.statusCode.retoken) {
                                     var access_token = t.data.access_token;
                                     //重新赋值access_token
                                     layui.data(layui.setter.tableName, {
                                         key: layui.setter.request.tokenName
                                         ,value: access_token
                                     });
-                                    layui.table.reload(i.config.id, {
-                                        where: {
-                                            access_token: access_token,
-                                        }
-                                    });
+                                    layui.table.reload(i.config.id, {});
                                 }
 
                                 "function" == typeof a.parseData && (t = a.parseData(t) || t),

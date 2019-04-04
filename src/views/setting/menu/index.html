@@ -72,11 +72,9 @@
             ,treeId:'id'//树形id字段名称
             ,treeUpId:'pid'//树形父id字段名称
             ,treeShowName:'title'//以树形式显示的字段
+            ,loading:false
             ,scroll:0
             ,elem: '#LAY-menu-list'
-            ,where: {
-                access_token: layui.data('layuiAdmin').access_token
-            }
             ,toolbar: '#LAY-menu-list-toolbarDemo'
             ,title: '菜单列表'
             ,cols: [[

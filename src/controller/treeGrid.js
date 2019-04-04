@@ -1544,6 +1544,8 @@ layui.config({
             params[request.limitName] = options.limit;
             that.filterRulesSet(params);//行内过滤条件
             that.sortSet(params);//排序条件
+            options.headers = options.headers || {};
+            options.headers[layui.setter.request.tokenName] = layui.data(layui.setter.tableName)[layui.setter.request.tokenName];
             $.ajax({
                 type: options.method || 'get'
                 ,url: options.url
@@ -1551,18 +1553,14 @@ layui.config({
                 ,dataType: 'json'
                 ,headers:options.headers
                 ,success: function(res){
-                    if (res.code == 401) {
+                    if (res.code == layui.setter.response.statusCode.retoken) {
                         var access_token = res.data.access_token;
                         //重新赋值access_token
                         layui.data(layui.setter.tableName, {
                             key: layui.setter.request.tokenName
                             ,value: access_token
                         });
-                        that.reload({
-                            where: {
-                                access_token: access_token,
-                            }
-                        });
+                        that.reload({});
                         return;
                     }
                     if(!res[response.dataName]){//返回是未定义或null时转成[]

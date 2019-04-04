@@ -41,7 +41,7 @@
         <div class="layui-form-item">
           <label class="layui-form-label">排序</label>
           <div class="layui-input-block">
-            <input type="text" name="sort" max="127" maxlength="2"   autocomplete="off" placeholder="数值越大,排名越靠前" class="layui-input">
+            <input type="number" name="sort" max="127" maxlength="2"   autocomplete="off" placeholder="数值越大,排名越靠前" class="layui-input">
           </div>
         </div>
         <div class="layui-form-item">
@@ -84,6 +84,7 @@
 
     /* 监听提交 */
     form.on('submit(LAY-menu-create)', function(data){
+      console.log(data);
       admin.req({
         url:layui.setter.server_url + "/menu_create",
         type:"post",
