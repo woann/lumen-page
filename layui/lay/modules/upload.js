@@ -131,7 +131,7 @@ layui.define("layer",
                                             i = "function" == typeof i ? i() : i,
                                                 r.append(e, i)
                                         }),
-                                    l.headers[layui.setter.request.tokenName] = layui.data(layui.setter.tableName)[request.tokenName] || '';
+                                    l.headers[layui.setter.request.tokenName] = layui.data(layui.setter.tableName)[layui.setter.request.tokenName] || '';
                                     i.ajax({
                                         url: l.url,
                                         type: "post",
