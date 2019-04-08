@@ -131,6 +131,7 @@ layui.define("layer",
                                             i = "function" == typeof i ? i() : i,
                                                 r.append(e, i)
                                         }),
+                                    l.headers = l.headers || {};
                                     l.headers[layui.setter.request.tokenName] = layui.data(layui.setter.tableName)[layui.setter.request.tokenName] || '';
                                     i.ajax({
                                         url: l.url,
@@ -146,7 +147,7 @@ layui.define("layer",
                                                     key: layui.setter.request.tokenName
                                                     ,value: res.data.access_token
                                                 });
-                                                l.headers[layui.setter.request.tokenName] = res.data.access_token
+                                                l.headers[layui.setter.request.tokenName] = res.data.access_token;
                                                 i.ajax({
                                                     url: l.url,
                                                     type: "post",
