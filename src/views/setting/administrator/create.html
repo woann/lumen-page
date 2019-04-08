@@ -26,6 +26,20 @@
           </div>
         </div>
         <div class="layui-form-item">
+          <label class="layui-form-label"><span style="color: red;">*</span> 缩略图</label>
+          <div class="layui-input-inline">
+            <div class="layui-upload">
+              <button type="button" class="layui-btn" id="upload_thumb">上传缩略图</button>
+              <input type="hidden" name="goods_thumb" >
+              <div class="layui-upload-list">
+                <img width="100" class="layui-upload-img" id="show">
+                <p id="demoText"></p>
+              </div>
+            </div>
+          </div>
+          <div class="layui-form-mid layui-word-aux">推荐尺寸:702px * 388px</div>
+        </div>
+        <div class="layui-form-item">
           <div class="layui-input-block">
             <div class="layui-footer">
               <button class="layui-btn" lay-submit="" lay-filter="LAY-administrator-create">立即提交</button>
@@ -39,11 +53,12 @@
 </div>
 
 <script>
-  layui.use(['admin', 'form', 'laydate'], function(){
+  layui.use(['admin', 'form', 'laydate','upload'], function(){
     var $ = layui.$
             ,admin = layui.admin
             ,layer = layui.layer
             , table = layui.table
+            ,upload = layui.upload
             ,form = layui.form;
     form.render(null, 'LAY-administrator-create');
     /*获取父级菜单选择框数据*/
@@ -57,6 +72,44 @@
           );
         }
         form.render('select');
+      }
+    });
+    //上传缩略图
+    var uploadInst = upload.render({
+      elem: '#upload_thumb'
+      ,url: layui.setter.server_url + '/upload'
+      ,data:{path:'pinpin-goods/goods',access_token:layui.data('layuiAdmin').access_token}
+      ,before: function(obj){
+        obj.preview(function(index, file, result){
+          $('#show').attr('src', result); //图片链接（base64）
+        });
+      }
+      ,done: function(res){
+        //如果上传失败
+        if(res.code != 0){
+          layer.msg(res.msg, {
+            offset: '15px'
+            ,icon: 5
+            ,time: 1000
+          }, function(){});
+          return false;
+        }
+        //上传成功
+        $('input[name="goods_thumb"]').val(res.data.filename);
+        layer.msg('上传成功', {
+          offset: '15px'
+          ,icon: 1
+          ,time: 1000
+        }, function(){});
+
+      }
+      ,error: function(){
+        //演示失败状态，并实现重传
+        var demoText = $('#demoText');
+        demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+        demoText.find('.demo-reload').on('click', function(){
+          uploadInst.upload();
+        });
       }
     });
     /* 监听提交 */
